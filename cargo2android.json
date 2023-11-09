@@ -13,7 +13,10 @@
       "device": true,
       "no-host": true,
       "add-module-block": "cargo2android_viz.bp",
-      "dependency_suffix": "_nostd",
+      "dep-suffixes": {
+        "der": "_nostd",
+        "spki": "_nostd"
+      },
       "force-rlib": true,
       "suffix": "_nostd",
       "no-std": true
