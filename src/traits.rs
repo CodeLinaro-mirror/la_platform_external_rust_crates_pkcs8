@@ -21,14 +21,17 @@ use der::pem::PemLabel;
 use std::path::Path;
 
 /// Parse a private key object from a PKCS#8 encoded document.
-pub trait DecodePrivateKey: Sized {
+pub trait DecodePrivateKey: for<'a> TryFrom<PrivateKeyInfo<'a>, Error = Error> + Sized {
     /// Deserialize PKCS#8 private key from ASN.1 DER-encoded data
     /// (binary format).
-    fn from_pkcs8_der(bytes: &[u8]) -> Result<Self>;
+    fn from_pkcs8_der(bytes: &[u8]) -> Result<Self> {
+        Self::try_from(PrivateKeyInfo::try_from(bytes)?)
+    }
 
     /// Deserialize encrypted PKCS#8 private key from ASN.1 DER-encoded data
     /// (binary format) and attempt to decrypt it using the provided password.
     #[cfg(feature = "encryption")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
     fn from_pkcs8_encrypted_der(bytes: &[u8], password: impl AsRef<[u8]>) -> Result<Self> {
         let doc = EncryptedPrivateKeyInfo::try_from(bytes)?.decrypt(password)?;
         Self::from_pkcs8_der(doc.as_bytes())
@@ -42,6 +45,7 @@ pub trait DecodePrivateKey: Sized {
     /// -----BEGIN PRIVATE KEY-----
     /// ```
     #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn from_pkcs8_pem(s: &str) -> Result<Self> {
         let (label, doc) = SecretDocument::from_pem(s)?;
         PrivateKeyInfo::validate_pem_label(label)?;
@@ -57,6 +61,7 @@ pub trait DecodePrivateKey: Sized {
     /// -----BEGIN ENCRYPTED PRIVATE KEY-----
     /// ```
     #[cfg(all(feature = "encryption", feature = "pem"))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "encryption", feature = "pem"))))]
     fn from_pkcs8_encrypted_pem(s: &str, password: impl AsRef<[u8]>) -> Result<Self> {
         let (label, doc) = SecretDocument::from_pem(s)?;
         EncryptedPrivateKeyInfo::validate_pem_label(label)?;
@@ -66,12 +71,15 @@ pub trait DecodePrivateKey: Sized {
     /// Load PKCS#8 private key from an ASN.1 DER-encoded file on the local
     /// filesystem (binary format).
     #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn read_pkcs8_der_file(path: impl AsRef<Path>) -> Result<Self> {
         Self::from_pkcs8_der(SecretDocument::read_der_file(path)?.as_bytes())
     }
 
     /// Load PKCS#8 private key from a PEM-encoded file on the local filesystem.
     #[cfg(all(feature = "pem", feature = "std"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn read_pkcs8_pem_file(path: impl AsRef<Path>) -> Result<Self> {
         let (label, doc) = SecretDocument::read_pem_file(path)?;
         PrivateKeyInfo::validate_pem_label(&label)?;
@@ -79,17 +87,9 @@ pub trait DecodePrivateKey: Sized {
     }
 }
 
-impl<T> DecodePrivateKey for T
-where
-    T: for<'a> TryFrom<PrivateKeyInfo<'a>, Error = Error>,
-{
-    fn from_pkcs8_der(bytes: &[u8]) -> Result<Self> {
-        Self::try_from(PrivateKeyInfo::try_from(bytes)?)
-    }
-}
-
 /// Serialize a private key object to a PKCS#8 encoded document.
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub trait EncodePrivateKey {
     /// Serialize a [`SecretDocument`] containing a PKCS#8-encoded private key.
     fn to_pkcs8_der(&self) -> Result<SecretDocument>;
@@ -97,6 +97,7 @@ pub trait EncodePrivateKey {
     /// Create an [`SecretDocument`] containing the ciphertext of
     /// a PKCS#8 encoded private key encrypted under the given `password`.
     #[cfg(feature = "encryption")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
     fn to_pkcs8_encrypted_der(
         &self,
         rng: impl CryptoRng + RngCore,
@@ -107,6 +108,7 @@ pub trait EncodePrivateKey {
 
     /// Serialize this private key as PEM-encoded PKCS#8 with the given [`LineEnding`].
     #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn to_pkcs8_pem(&self, line_ending: LineEnding) -> Result<Zeroizing<String>> {
         let doc = self.to_pkcs8_der()?;
         Ok(doc.to_pem(PrivateKeyInfo::PEM_LABEL, line_ending)?)
@@ -115,6 +117,7 @@ pub trait EncodePrivateKey {
     /// Serialize this private key as an encrypted PEM-encoded PKCS#8 private
     /// key using the `provided` to derive an encryption key.
     #[cfg(all(feature = "encryption", feature = "pem"))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "encryption", feature = "pem"))))]
     fn to_pkcs8_encrypted_pem(
         &self,
         rng: impl CryptoRng + RngCore,
@@ -127,12 +130,14 @@ pub trait EncodePrivateKey {
 
     /// Write ASN.1 DER-encoded PKCS#8 private key to the given path
     #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn write_pkcs8_der_file(&self, path: impl AsRef<Path>) -> Result<()> {
         Ok(self.to_pkcs8_der()?.write_der_file(path)?)
     }
 
     /// Write ASN.1 DER-encoded PKCS#8 private key to the given path
     #[cfg(all(feature = "pem", feature = "std"))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "pem", feature = "std"))))]
     fn write_pkcs8_pem_file(&self, path: impl AsRef<Path>, line_ending: LineEnding) -> Result<()> {
         let doc = self.to_pkcs8_der()?;
         Ok(doc.write_pem_file(path, PrivateKeyInfo::PEM_LABEL, line_ending)?)
