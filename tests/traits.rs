@@ -30,6 +30,12 @@ impl AsRef<[u8]> for MockKey {
     }
 }
 
+impl DecodePrivateKey for MockKey {
+    fn from_pkcs8_der(bytes: &[u8]) -> Result<MockKey> {
+        Ok(MockKey(bytes.to_vec()))
+    }
+}
+
 impl EncodePrivateKey for MockKey {
     fn to_pkcs8_der(&self) -> Result<SecretDocument> {
         Ok(SecretDocument::try_from(self.as_ref())?)
@@ -40,7 +46,7 @@ impl TryFrom<PrivateKeyInfo<'_>> for MockKey {
     type Error = Error;
 
     fn try_from(pkcs8: PrivateKeyInfo<'_>) -> Result<MockKey> {
-        Ok(MockKey(pkcs8.to_der()?))
+        Ok(MockKey(pkcs8.to_vec()?))
     }
 }
 
