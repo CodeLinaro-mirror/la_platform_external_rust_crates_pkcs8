@@ -11,7 +11,7 @@
     {
       "package": {
         "pkcs8": {
-          "device_supported": false
+          "add_module_block": "cargo2android_viz.bp"
         }
       }
     },
