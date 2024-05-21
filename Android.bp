@@ -39,7 +39,7 @@ rust_library {
     crate_name: "pkcs8",
     cargo_env_compat: true,
     cargo_pkg_version: "0.10.2",
-    srcs: ["src/lib.rs"],
+    crate_root: "src/lib.rs",
     edition: "2021",
     features: ["alloc"],
     rustlibs: [
@@ -66,7 +66,7 @@ rust_library_rlib {
     crate_name: "pkcs8",
     cargo_env_compat: true,
     cargo_pkg_version: "0.10.2",
-    srcs: ["src/lib.rs"],
+    crate_root: "src/lib.rs",
     edition: "2021",
     features: ["alloc"],
     rustlibs: [
